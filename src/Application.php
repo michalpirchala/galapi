@@ -37,7 +37,7 @@ class Application extends BaseApplication
         // Call parent to load bootstrap from files.
         parent::bootstrap();
 
-        if (PHP_SAPI === 'cli') {
+        if (in_array(PHP_SAPI, array('cli', 'cli-server', 'phpdbg'))) {
             $this->bootstrapCli();
         }
 

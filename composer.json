@@ -47,7 +47,8 @@
         "cs-check": "phpcs --colors -p --standard=vendor/cakephp/cakephp-codesniffer/CakePHP src/ tests/ config/ plugins/",
         "cs-fix": "phpcbf --colors --standard=vendor/cakephp/cakephp-codesniffer/CakePHP src/ tests/ config/ plugins/",
         "phpstan": "vendor/bin/phpstan analyse -l 5 src/ plugins/",
-        "test": "phpunit --colors=always"
+        "test": "phpunit --colors=always",
+        "testcov": "phpdbg7.2 -qrr vendor/bin/phpunit --coverage-html webroot/coverage"
     },
     "prefer-stable": true,
     "config": {
