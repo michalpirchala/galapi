@@ -69,6 +69,35 @@ Router::scope('/', function (RouteBuilder $routes) {
      */
     $routes->connect('/pages/*', ['controller' => 'Pages', 'action' => 'display']);
 
+    Router::scope('/gallery', function (RouteBuilder $routes) {
+        $routes->setExtensions(['json']);
+        $routes->get(
+            '/',
+            ['controller' => 'Galleries', 'action' => 'index']
+        );
+        $routes->post(
+            '/',
+            ['controller' => 'Galleries', 'action' => 'add']
+        );
+        $routes->get(
+            '/:path',
+            ['controller' => 'Galleries', 'action' => 'view']
+        );
+        $routes->delete(
+            '/:path',
+            ['controller' => 'Galleries', 'action' => 'delete']
+        );
+        $routes->post(
+            '/:path',
+            ['controller' => 'Galleries', 'action' => 'upload']
+        );
+    });
+
+    $routes->get(
+        '/images/:params/:path',
+        ['controller' => 'Images', 'action' => 'view']
+    )->setExtensions(['json']);
+
     /**
      * Connect catchall routes for all controllers.
      *
