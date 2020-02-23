@@ -27,6 +27,8 @@ class Gallery extends Entity
         'images' => true,
     ];
 
+    protected $_virtual = ['path'];
+
     /**
      * Returns path created from name
      * @return string rawurlencoded name
