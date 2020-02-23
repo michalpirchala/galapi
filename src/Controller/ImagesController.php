@@ -25,6 +25,8 @@ class ImagesController extends AppController
         $images = $this->paginate($this->Images);
 
         $this->set(compact('images'));
+
+        return null;
     }
 
     /**
@@ -41,6 +43,8 @@ class ImagesController extends AppController
         ]);
 
         $this->set('image', $image);
+
+        return null;
     }
 
     /**
@@ -62,6 +66,8 @@ class ImagesController extends AppController
         }
         $galleries = $this->Images->Galleries->find('list', ['limit' => 200]);
         $this->set(compact('image', 'galleries'));
+
+        return null;
     }
 
     /**
@@ -87,6 +93,8 @@ class ImagesController extends AppController
         }
         $galleries = $this->Images->Galleries->find('list', ['limit' => 200]);
         $this->set(compact('image', 'galleries'));
+
+        return null;
     }
 
     /**

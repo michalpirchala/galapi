@@ -2,6 +2,12 @@
 namespace App\Controller;
 
 use App\Controller\AppController;
+use Cake\Event\Event;
+use Cake\Http\Exception\BadRequestException;
+use Cake\Http\Exception\ConflictException;
+use Cake\Http\Exception\InternalErrorException;
+use Cake\Http\Exception\NotAcceptableException;
+use Cake\Http\Exception\NotFoundException;
 
 /**
  * Galleries Controller
@@ -13,94 +19,195 @@ use App\Controller\AppController;
 class GalleriesController extends AppController
 {
     /**
+     * {@inheritDoc}
+     * @throws \Cake\Http\Exception\NotAcceptableException when client does not accept or request JSON response
+     */
+    public function beforeFilter(Event $event)
+    {
+        $acceptsJson = $this->request->accepts('application/json');
+        if (!$this->request->is('json') && !$acceptsJson) {
+            throw new NotAcceptableException(__("Client must accept or request JSON response"));
+        }
+
+        return parent::beforeFilter($event);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function initialize()
+    {
+        parent::initialize();
+        $this->loadComponent('RequestHandler');
+    }
+
+    /**
      * Index method
      *
      * @return \Cake\Http\Response|null
      */
     public function index()
     {
-        $galleries = $this->paginate($this->Galleries);
+        $galleries = $this->Galleries->find('all', [
+            'fields' => ['name'],
+        ]);
 
         $this->set(compact('galleries'));
+        $this->set('_serialize', ['galleries']);
+
+        return null;
     }
 
     /**
      * View method
      *
-     * @param string|null $id Gallery id.
      * @return \Cake\Http\Response|null
-     * @throws \Cake\Datasource\Exception\RecordNotFoundException When record not found.
      */
-    public function view($id = null)
+    public function view()
     {
-        $gallery = $this->Galleries->get($id, [
-            'contain' => ['Images'],
-        ]);
+        $gallery = $this->Galleries->findByName(rawurldecode($this->request->getParam('path')))
+            ->contain(['Images'])
+            ->first();
 
-        $this->set('gallery', $gallery);
+        if (empty($gallery)) {
+            throw new NotFoundException(__("Gallery not found"));
+        }
+
+        $this->set('gallery', [
+            'gallery' => [
+                'path' => $gallery->path,
+                'name' => $gallery->name,
+            ],
+            'images' => $this->Galleries->prepareImagesData($gallery),
+        ]);
+        $this->set('_serialize', 'gallery');
+
+        return null;
     }
 
     /**
      * Add method
      *
-     * @return \Cake\Http\Response|null Redirects on successful add, renders view otherwise.
+     * @return \Cake\Http\Response|null
      */
     public function add()
     {
         $gallery = $this->Galleries->newEntity();
         if ($this->request->is('post')) {
             $gallery = $this->Galleries->patchEntity($gallery, $this->request->getData());
-            if ($this->Galleries->save($gallery)) {
-                $this->Flash->success(__('The gallery has been saved.'));
 
-                return $this->redirect(['action' => 'index']);
+            $errors = $gallery->errors();
+
+            if (empty($errors)) {
+                if ($this->Galleries->findByName($gallery->name)->count()) {
+                    throw new ConflictException(__("Gallery with this name already exists"));
+                }
+
+                if ($this->Galleries->save($gallery)) {
+                    $this->response->statusCode(201);
+
+                    $this->set('path', $gallery->get('path'));
+                    $this->set('name', $gallery->name);
+                    $this->set('_serialize', ['name', 'path']);
+
+                    return null;
+                }
+            } else {
+                $this->response->statusCode(400);
+
+                $description = [];
+
+                foreach ($errors as $field => $field_errors) {
+                    foreach ($field_errors as $error) {
+                        $description[] = $field . ': ' . $error;
+                    }
+                }
+
+                $description = "Bad JSON object: " . join(', ', $description);
+
+                $this->set('data', [
+                    'code' => 400,
+                    'name' => 'INVALID_SCHEMA',
+                    'description' => $description,
+                ]);
+                $this->set('_serialize', 'data');
+
+                return null;
             }
-            $this->Flash->error(__('The gallery could not be saved. Please, try again.'));
         }
-        $this->set(compact('gallery'));
+
+        throw new InternalErrorException(__("Undefined error"));
     }
 
     /**
-     * Edit method
+     * Upload method
      *
-     * @param string|null $id Gallery id.
-     * @return \Cake\Http\Response|null Redirects on successful edit, renders view otherwise.
-     * @throws \Cake\Datasource\Exception\RecordNotFoundException When record not found.
+     * @return \Cake\Http\Response|null
      */
-    public function edit($id = null)
+    public function upload()
     {
-        $gallery = $this->Galleries->get($id, [
-            'contain' => [],
-        ]);
-        if ($this->request->is(['patch', 'post', 'put'])) {
-            $gallery = $this->Galleries->patchEntity($gallery, $this->request->getData());
-            if ($this->Galleries->save($gallery)) {
-                $this->Flash->success(__('The gallery has been saved.'));
+        $this->request->allowMethod(['post']);
 
-                return $this->redirect(['action' => 'index']);
-            }
-            $this->Flash->error(__('The gallery could not be saved. Please, try again.'));
+        $gallery = $this->Galleries->findByName(rawurldecode($this->request->getParam('path')))->first();
+
+        if (empty($gallery)) {
+            throw new NotFoundException(__("Gallery not found"));
         }
-        $this->set(compact('gallery'));
+
+        if (count($this->request->getData()) == 0) {
+            throw new BadRequestException(__("Image for upload not found"));
+        }
+
+        $savedImages = [];
+
+        foreach ($this->request->getData() as $name => $file) {
+            $image = $this->Galleries->Images->newEntity([
+                'gallery_id' => $gallery->id,
+                'name' => $name,
+                'filename' => $file,
+            ]);
+
+            if (!$this->Galleries->Images->save($image)) {
+                throw new InternalErrorException(__("Undefined error"));
+            }
+
+            $savedImages[] = $image;
+        }
+
+        $this->response->statusCode(201);
+
+        $gallery->images = $savedImages;
+
+        $this->set('data', [
+            'uploaded' => $this->Galleries->prepareImagesData($gallery),
+        ]);
+        $this->set('_serialize', 'data');
+
+        return null;
     }
 
     /**
      * Delete method
      *
-     * @param string|null $id Gallery id.
-     * @return \Cake\Http\Response|null Redirects to index.
-     * @throws \Cake\Datasource\Exception\RecordNotFoundException When record not found.
+     * @return \Cake\Http\Response|null
      */
-    public function delete($id = null)
+    public function delete()
     {
-        $this->request->allowMethod(['post', 'delete']);
-        $gallery = $this->Galleries->get($id);
-        if ($this->Galleries->delete($gallery)) {
-            $this->Flash->success(__('The gallery has been deleted.'));
-        } else {
-            $this->Flash->error(__('The gallery could not be deleted. Please, try again.'));
+        $this->request->allowMethod(['delete']);
+
+        $gallery = $this->Galleries->findByName(rawurldecode($this->request->getParam('path')))->first();
+
+        if (empty($gallery)) {
+            throw new NotFoundException(__("Gallery not found"));
         }
 
-        return $this->redirect(['action' => 'index']);
+        if ($this->Galleries->delete($gallery)) {
+            $this->response->withStatus(200, __("Gallery successfully deleted"));
+            $this->set('_serialize', []);
+
+            return null;
+        }
+
+        throw new InternalErrorException(__("Undefined error"));
     }
 }

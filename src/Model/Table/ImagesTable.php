@@ -44,6 +44,12 @@ class ImagesTable extends Table
             'foreignKey' => 'gallery_id',
             'joinType' => 'INNER',
         ]);
+
+        $this->addBehavior('Josegonzalez/Upload.Upload', [
+            'filename' => [
+                'keepFilesOnDelete' => false,
+            ],
+        ]);
     }
 
     /**

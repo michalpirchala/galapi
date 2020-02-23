@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Model\Table;
 
 use Cake\ORM\Query;
@@ -38,6 +39,8 @@ class GalleriesTable extends Table
 
         $this->hasMany('Images', [
             'foreignKey' => 'gallery_id',
+            'dependent' => true,
+            'cascadeCallbacks' => true,
         ]);
     }
 
@@ -66,5 +69,25 @@ class GalleriesTable extends Table
             ]);
 
         return $validator;
+    }
+
+    /**
+     * [prepareImagesData description]
+     * @param  \App\Model\Entity\Gallery $gallery gallery to extract image info from
+     * @return array of images data
+     */
+    public function prepareImagesData(\App\Model\Entity\Gallery $gallery)
+    {
+        $data = [];
+        foreach ($gallery->images as $image) {
+            $data[] = [
+                'path' => rawurlencode($image['filename']),
+                'fullpath' => $gallery->get('path') . DS . rawurlencode($image['filename']),
+                'name' => $image['name'],
+                'modified' => $image->modified->i18nFormat("yyyy-MM-dd'T'HH:mm:ss.SZ"),
+            ];
+        }
+
+        return $data;
     }
 }
