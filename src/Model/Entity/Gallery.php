@@ -26,4 +26,13 @@ class Gallery extends Entity
         'name' => true,
         'images' => true,
     ];
+
+    /**
+     * Returns path created from name
+     * @return string rawurlencoded name
+     */
+    protected function _getPath()
+    {
+        return rawurlencode($this->name);
+    }
 }
