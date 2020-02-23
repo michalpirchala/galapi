@@ -6,6 +6,7 @@
 /tmp/*
 /vendor/*
 /webroot/coverage
+/webroot/files/
 .phpintel
 
 # OS generated files #
