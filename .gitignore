@@ -6,6 +6,8 @@
 /tmp/*
 /vendor/*
 /webroot/coverage
+.phpintel
+
 # OS generated files #
 ######################
 .DS_Store
