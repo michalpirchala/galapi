@@ -94,7 +94,7 @@ Router::scope('/', function (RouteBuilder $routes) {
     });
 
     $routes->get(
-        '/images/:params/:path',
+        '/images/:params/:gallery/:path',
         ['controller' => 'Images', 'action' => 'view']
     )->setExtensions(['json']);
 
