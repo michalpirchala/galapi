@@ -65,7 +65,7 @@ class GalleriesController extends AppController
      */
     public function view()
     {
-        $gallery = $this->Galleries->findByName(rawurldecode($this->request->getParam('path')))
+        $gallery = $this->Galleries->findByName($this->request->getParam('path'))
             ->contain(['Images'])
             ->first();
 
@@ -148,7 +148,7 @@ class GalleriesController extends AppController
     {
         $this->request->allowMethod(['post']);
 
-        $gallery = $this->Galleries->findByName(rawurldecode($this->request->getParam('path')))->first();
+        $gallery = $this->Galleries->findByName($this->request->getParam('path'))->first();
 
         if (empty($gallery)) {
             throw new NotFoundException(__("Gallery not found"));
@@ -195,7 +195,7 @@ class GalleriesController extends AppController
     {
         $this->request->allowMethod(['delete']);
 
-        $gallery = $this->Galleries->findByName(rawurldecode($this->request->getParam('path')))->first();
+        $gallery = $this->Galleries->findByName($this->request->getParam('path'))->first();
 
         if (empty($gallery)) {
             throw new NotFoundException(__("Gallery not found"));
