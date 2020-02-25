@@ -1,11 +1,14 @@
 <?php
+// phpcs:disable PSR1.Classes.ClassDeclaration.MissingNamespace
 use Migrations\AbstractMigration;
 
 class Initial extends AbstractMigration
 {
+    /**
+     * {@inheritdoc}
+     */
     public function up()
     {
-
         $this->table('galleries')
             ->addColumn('name', 'string', [
                 'default' => null,
@@ -43,6 +46,9 @@ class Initial extends AbstractMigration
             ->create();
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function down()
     {
         $this->table('galleries')->drop()->save();
